@@ -21,6 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <string.h>
 
 /* USER CODE END Includes */
 
@@ -75,11 +76,90 @@ static void MX_I2C1_Init(void);
 static void MX_RTC_Init(void);
 /* USER CODE BEGIN PFP */
 
+char str[18] = "";
+uint8_t inpStr[8];
+int position = 2;
+int totalPosition = 0;
+uint8_t sendMode = 1;
+uint8_t resMode = 0;
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
+	if (resMode == 0) {
+		if (inpStr[0] == 0x14) {
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
+			HAL_Delay(1);
+			HAL_UART_Receive_IT(&huart1,inpStr,3);
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);
+		}
+		else {
+			sendMode = (int)inpStr[0];
+			totalPosition = (int) inpStr[1];
+			resMode = 1;
+			HAL_UART_Receive_IT(&huart1,(uint8_t*)str,totalPosition);
+		}
+	}
+	else {
+		HAL_UART_Receive_IT(&huart1,inpStr,3);
+		if (sendMode == 1) {
+			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
+			HAL_UART_Transmit(&huart1, (uint8_t*)str, totalPosition, 0xFFFF);
+			HAL_UART_Transmit(&huart1, (uint8_t*)"\r\n", 2, 0xFFFF);
+			HAL_SPI_Transmit_DMA(&hspi1, (uint8_t*)str, totalPosition);
+			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+		}
+		resMode = 0;
+	}
+	
+	/*if (totalPosition == 0) {
+		sendMode = (int)inpStr[0];
+		totalPosition = 1;
+		position = 0;
+	}
+	else if ((position == 0)&&(totalPosition == 1)) {
+		totalPosition = (int)inpStr[0];
+		position = 1;
+	}
+	else if (position < totalPosition) {
+		str[position-1] = inpStr[0];
+		position++;
+	}
+	else {
+		str[position-1] = inpStr[0];
+		totalPosition = 0;
+		if (sendMode == 1) {
+			HAL_SPI_Transmit_DMA(&hspi1, (uint8_t*)str, strlen(str));
+			HAL_UART_Transmit(&huart1, (uint8_t*) str, strlen(str), 0xFFFF);
+			HAL_UART_Transmit(&huart1, (uint8_t*) "\r\n", 2, 0xFFFF);
+		}
+	}*/
+	
+	
+	/*if (inpStr[0] != '\n') {
+		str[position] = inpStr[0];
+		//for (int i = 0; i<16; i++) str[i]=(uint8_t)0x00;
+		if (position < 16) position++;
+		else {
+			str[position] = '\n';
+			//str[position + 1] = (uint8_t)0x00;
+			position = 0;
+		}
+	}
+	else {
+		position++;
+		str[position] = '\n';
+		while (position < 18) {
+			position++;
+			str[position] = (uint8_t)0x00;
+		}
+		position = 0;
+	}*/
+	
+	
+}
 /* USER CODE END 0 */
 
 /**
@@ -119,6 +199,13 @@ int main(void)
   MX_I2C1_Init();
   MX_RTC_Init();
   /* USER CODE BEGIN 2 */
+	HAL_UART_Transmit(&huart1, (uint8_t*)"Hello\r\n", 7, 0xFFFF);
+	HAL_UART_Receive_IT(&huart1, inpStr, 3);
+	str[0] = (uint8_t)0x33;
+	str[1] = (uint8_t)0x3D;
+	str[2] = (uint8_t)0x3D;
+	str[3] = (uint8_t)0x3D;
+	str[4] = (uint8_t)0x44;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -128,9 +215,15 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-		HAL_UART_Transmit_DMA(&huart1, (uint8_t*)"hello\r\n", 7);
-		HAL_SPI_Transmit_DMA(&hspi1, (uint8_t*)0x7777, 1);
-		HAL_Delay(500);
+		if (sendMode == 0) {
+			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
+			HAL_SPI_Transmit_DMA(&hspi1, (uint8_t*) totalPosition, position);
+			HAL_UART_Transmit(&huart1, (uint8_t*)str, totalPosition, 0xFFFF);
+			HAL_UART_Transmit(&huart1, (uint8_t*)"\r\n", 2, 0xFFFF);
+			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+		}
+		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+		HAL_Delay(1000);
   }
   /* USER CODE END 3 */
 }
@@ -535,6 +628,8 @@ void Error_Handler(void)
   __disable_irq();
   while (1)
   {
+		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+		HAL_Delay(100);
   }
   /* USER CODE END Error_Handler_Debug */
 }
