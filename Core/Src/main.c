@@ -79,7 +79,7 @@ static void MX_RTC_Init(void);
 char str[18] = "";
 uint8_t inpStr[8];
 int position = 2;
-int totalPosition = 0;
+int totalPosition = 5;
 uint8_t sendMode = 1;
 uint8_t resMode = 0;
 
@@ -90,10 +90,10 @@ uint8_t resMode = 0;
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 	if (resMode == 0) {
 		if (inpStr[0] == 0x14) {
-			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);
 			HAL_Delay(1);
 			HAL_UART_Receive_IT(&huart1,inpStr,3);
-			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
 		}
 		else {
 			sendMode = (int)inpStr[0];
@@ -105,11 +105,12 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 	else {
 		HAL_UART_Receive_IT(&huart1,inpStr,3);
 		if (sendMode == 1) {
-			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
+			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
 			HAL_UART_Transmit(&huart1, (uint8_t*)str, totalPosition, 0xFFFF);
 			HAL_UART_Transmit(&huart1, (uint8_t*)"\r\n", 2, 0xFFFF);
 			HAL_SPI_Transmit_DMA(&hspi1, (uint8_t*)str, totalPosition);
-			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+			HAL_Delay(1);
+			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
 		}
 		resMode = 0;
 	}
@@ -206,6 +207,7 @@ int main(void)
 	str[2] = (uint8_t)0x3D;
 	str[3] = (uint8_t)0x3D;
 	str[4] = (uint8_t)0x44;
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -216,11 +218,12 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 		if (sendMode == 0) {
-			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
-			HAL_SPI_Transmit_DMA(&hspi1, (uint8_t*) totalPosition, position);
+			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+			HAL_SPI_Transmit_DMA(&hspi1, (uint8_t*) str, totalPosition);
 			HAL_UART_Transmit(&huart1, (uint8_t*)str, totalPosition, 0xFFFF);
 			HAL_UART_Transmit(&huart1, (uint8_t*)"\r\n", 2, 0xFFFF);
-			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+			HAL_Delay(1);
+			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
 		}
 		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
 		HAL_Delay(1000);
