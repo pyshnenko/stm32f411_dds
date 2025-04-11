@@ -3,7 +3,7 @@
 <title>Static Call Graph - [dds_stmf4\dds_stmf4.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image dds_stmf4\dds_stmf4.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060960: Last Updated: Wed Apr 09 16:33:57 2025
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060960: Last Updated: Fri Apr 11 12:42:46 2025
 <BR><P>
 <H3>Maximum Stack Usage =        176 bytes + Unknown(Functions without stacksize, Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
@@ -600,7 +600,6 @@ Global Symbols
 <BR>[Calls]<UL><LI><a href="#[66]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GetTick
 </UL>
 <BR>[Called By]<UL><LI><a href="#[58]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
-<LI><a href="#[92]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_UART_RxCpltCallback
 <LI><a href="#[62]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Error_Handler
 </UL>
 
@@ -884,14 +883,13 @@ Global Symbols
 <LI><a href="#[92]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_UART_RxCpltCallback
 </UL>
 
-<P><STRONG><a name="[92]"></a>HAL_UART_RxCpltCallback</STRONG> (Thumb, 176 bytes, Stack size 16 bytes, main.o(i.HAL_UART_RxCpltCallback))
+<P><STRONG><a name="[92]"></a>HAL_UART_RxCpltCallback</STRONG> (Thumb, 164 bytes, Stack size 16 bytes, main.o(i.HAL_UART_RxCpltCallback))
 <BR><BR>[Stack]<UL><LI>Max Depth = 80<LI>Call Chain = HAL_UART_RxCpltCallback &rArr; HAL_UART_Transmit &rArr; UART_WaitOnFlagUntilTimeout
 </UL>
 <BR>[Calls]<UL><LI><a href="#[94]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_UART_Transmit
 <LI><a href="#[90]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_UART_Receive_IT
 <LI><a href="#[84]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_SPI_Transmit_DMA
 <LI><a href="#[93]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GPIO_WritePin
-<LI><a href="#[64]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_Delay
 </UL>
 <BR>[Called By]<UL><LI><a href="#[86]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;UART_Receive_IT
 </UL>
@@ -990,7 +988,7 @@ Global Symbols
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> startup_stm32f411xe.o(RESET)
 </UL>
-<P><STRONG><a name="[58]"></a>main</STRONG> (Thumb, 248 bytes, Stack size 0 bytes, main.o(i.main))
+<P><STRONG><a name="[58]"></a>main</STRONG> (Thumb, 278 bytes, Stack size 0 bytes, main.o(i.main))
 <BR><BR>[Stack]<UL><LI>Max Depth = 176<LI>Call Chain = main &rArr; SystemClock_Config &rArr; HAL_RCC_ClockConfig &rArr; HAL_RCC_GetSysClockFreq &rArr; __aeabi_uldivmod
 </UL>
 <BR>[Calls]<UL><LI><a href="#[94]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_UART_Transmit

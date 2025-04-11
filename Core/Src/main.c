@@ -80,7 +80,7 @@ char str[18] = "";
 uint8_t inpStr[8];
 int position = 2;
 int totalPosition = 5;
-uint8_t sendMode = 1;
+uint8_t sendMode = 0;
 uint8_t resMode = 0;
 
 /* USER CODE END PFP */
@@ -91,7 +91,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 	if (resMode == 0) {
 		if (inpStr[0] == 0x14) {
 			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);
-			HAL_Delay(1);
+			//HAL_Delay(100);
 			HAL_UART_Receive_IT(&huart1,inpStr,3);
 			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
 		}
@@ -103,16 +103,17 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 		}
 	}
 	else {
-		HAL_UART_Receive_IT(&huart1,inpStr,3);
 		if (sendMode == 1) {
 			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
 			HAL_UART_Transmit(&huart1, (uint8_t*)str, totalPosition, 0xFFFF);
 			HAL_UART_Transmit(&huart1, (uint8_t*)"\r\n", 2, 0xFFFF);
 			HAL_SPI_Transmit_DMA(&hspi1, (uint8_t*)str, totalPosition);
-			HAL_Delay(1);
+			//HAL_Delay(1);
 			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
 		}
 		resMode = 0;
+		//HAL_Delay(100);
+		HAL_UART_Receive_IT(&huart1,inpStr,3);
 	}
 	
 	/*if (totalPosition == 0) {
@@ -200,7 +201,7 @@ int main(void)
   MX_I2C1_Init();
   MX_RTC_Init();
   /* USER CODE BEGIN 2 */
-	HAL_UART_Transmit(&huart1, (uint8_t*)"Hello\r\n", 7, 0xFFFF);
+	HAL_UART_Transmit(&huart1, (uint8_t*)"uart->SPI v0.1.1\r\n", 18, 0xFFFF);
 	HAL_UART_Receive_IT(&huart1, inpStr, 3);
 	str[0] = (uint8_t)0x33;
 	str[1] = (uint8_t)0x3D;
@@ -217,7 +218,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-		if (sendMode == 0) {
+		if (sendMode != 1) {
 			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
 			HAL_SPI_Transmit_DMA(&hspi1, (uint8_t*) str, totalPosition);
 			HAL_UART_Transmit(&huart1, (uint8_t*)str, totalPosition, 0xFFFF);
@@ -226,7 +227,7 @@ int main(void)
 			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
 		}
 		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-		HAL_Delay(1000);
+		HAL_Delay(sendMode == 2 ? 100 : 1000);
   }
   /* USER CODE END 3 */
 }
@@ -368,7 +369,7 @@ static void MX_SPI1_Init(void)
   hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
