@@ -80,20 +80,45 @@ char str[18] = "";
 uint8_t inpStr[8];
 int position = 2;
 int totalPosition = 5;
-uint8_t sendMode = 0;
+uint8_t sendMode = 1;
 uint8_t resMode = 0;
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
+	HAL_UART_Transmit(&huart1, (uint8_t*) "spi ", 4, 0xFF);
+	HAL_UART_Transmit(&huart1, (uint8_t*) str, totalPosition, 0xFF);
+	HAL_UART_Transmit(&huart1, (uint8_t*) "\r\n", 2, 0xFF);
+}
+
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
+	
 	if (resMode == 0) {
 		if (inpStr[0] == 0x14) {
-			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);
-			//HAL_Delay(100);
-			HAL_UART_Receive_IT(&huart1,inpStr,3);
 			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
+			//HAL_Delay(100);
+			for(int i = 0; i<100000; i++) {};
+			HAL_UART_Receive_IT(&huart1,inpStr,3);
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);
+		}
+		else if (inpStr[0] == 0x15) {
+			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_RESET);
+			//HAL_Delay(100);
+			for(int i = 0; i<100000; i++) {};
+			HAL_UART_Receive_IT(&huart1,inpStr,3);
+			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_SET);
+		}
+		else if (inpStr[0] == 0x20) {
+			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+			totalPosition = (int) inpStr[1];
+			uint8_t addrRead[1];
+			addrRead[0] = (0x80 | inpStr[2]);
+			HAL_SPI_Transmit(&hspi1, (uint8_t*)addrRead, 1, 0xFF);
+			HAL_SPI_Receive_DMA(&hspi1, (uint8_t*)str, totalPosition);
+			HAL_UART_Receive_IT(&huart1,inpStr,3);
+			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
 		}
 		else {
 			sendMode = (int)inpStr[0];
@@ -105,9 +130,19 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 	else {
 		if (sendMode == 1) {
 			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+			HAL_SPI_Transmit_DMA(&hspi1, (uint8_t*)str, totalPosition);
 			HAL_UART_Transmit(&huart1, (uint8_t*)str, totalPosition, 0xFFFF);
 			HAL_UART_Transmit(&huart1, (uint8_t*)"\r\n", 2, 0xFFFF);
-			HAL_SPI_Transmit_DMA(&hspi1, (uint8_t*)str, totalPosition);
+			//HAL_Delay(1);
+			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
+		}
+		else if (sendMode == 3) {
+			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+			HAL_SPI_Transmit(&hspi1, (uint8_t*)str, 1, 0xFFFF); 
+			HAL_SPI_Transmit_DMA(&hspi1, (uint8_t*)str+1, totalPosition-1);
+			uint8_t sstr[25];
+			HAL_UART_Transmit(&huart1, (uint8_t*)str, totalPosition, 0xFFFF);
+			HAL_UART_Transmit(&huart1, (uint8_t*)"\r\n", 2, 0xFFFF);
 			//HAL_Delay(1);
 			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
 		}
@@ -218,12 +253,12 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-		if (sendMode != 1) {
+		if (sendMode == 0) {
 			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
 			HAL_SPI_Transmit_DMA(&hspi1, (uint8_t*) str, totalPosition);
 			HAL_UART_Transmit(&huart1, (uint8_t*)str, totalPosition, 0xFFFF);
 			HAL_UART_Transmit(&huart1, (uint8_t*)"\r\n", 2, 0xFFFF);
-			HAL_Delay(1);
+			//HAL_Delay(1);
 			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
 		}
 		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
@@ -364,8 +399,8 @@ static void MX_SPI1_Init(void)
   /* SPI1 parameter configuration*/
   hspi1.Instance = SPI1;
   hspi1.Init.Mode = SPI_MODE_MASTER;
-  hspi1.Init.Direction = SPI_DIRECTION_2LINES;
-  hspi1.Init.DataSize = SPI_DATASIZE_16BIT;
+  hspi1.Init.Direction = SPI_DIRECTION_1LINE;
+  hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
   hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi1.Init.NSS = SPI_NSS_SOFT;
@@ -403,7 +438,7 @@ static void MX_SPI2_Init(void)
   hspi2.Instance = SPI2;
   hspi2.Init.Mode = SPI_MODE_SLAVE;
   hspi2.Init.Direction = SPI_DIRECTION_2LINES;
-  hspi2.Init.DataSize = SPI_DATASIZE_16BIT;
+  hspi2.Init.DataSize = SPI_DATASIZE_8BIT;
   hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi2.Init.NSS = SPI_NSS_SOFT;
@@ -440,7 +475,7 @@ static void MX_SPI3_Init(void)
   hspi3.Instance = SPI3;
   hspi3.Init.Mode = SPI_MODE_SLAVE;
   hspi3.Init.Direction = SPI_DIRECTION_2LINES;
-  hspi3.Init.DataSize = SPI_DATASIZE_16BIT;
+  hspi3.Init.DataSize = SPI_DATASIZE_8BIT;
   hspi3.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi3.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi3.Init.NSS = SPI_NSS_SOFT;
@@ -477,7 +512,7 @@ static void MX_SPI4_Init(void)
   hspi4.Instance = SPI4;
   hspi4.Init.Mode = SPI_MODE_SLAVE;
   hspi4.Init.Direction = SPI_DIRECTION_2LINES;
-  hspi4.Init.DataSize = SPI_DATASIZE_16BIT;
+  hspi4.Init.DataSize = SPI_DATASIZE_8BIT;
   hspi4.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi4.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi4.Init.NSS = SPI_NSS_SOFT;
@@ -588,6 +623,9 @@ static void MX_GPIO_Init(void)
                           |GPIO_PIN_4, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_SET);
+
+  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : PC13 */
@@ -603,6 +641,13 @@ static void MX_GPIO_Init(void)
                           |GPIO_PIN_4;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PA6 */
+  GPIO_InitStruct.Pin = GPIO_PIN_6;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
